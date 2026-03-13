@@ -1,0 +1,113 @@
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm food-editorial palette */
+    --background: 0.97 0.012 75;
+    --foreground: 0.18 0.025 55;
+
+    --card: 0.99 0.008 80;
+    --card-foreground: 0.18 0.025 55;
+
+    --popover: 0.99 0.008 80;
+    --popover-foreground: 0.18 0.025 55;
+
+    /* Rich amber/terracotta primary */
+    --primary: 0.62 0.17 46;
+    --primary-foreground: 0.99 0.005 80;
+
+    /* Warm sage green secondary */
+    --secondary: 0.93 0.025 130;
+    --secondary-foreground: 0.35 0.06 140;
+
+    /* Warm taupe muted */
+    --muted: 0.93 0.015 75;
+    --muted-foreground: 0.52 0.03 60;
+
+    /* Forest green accent */
+    --accent: 0.88 0.04 140;
+    --accent-foreground: 0.3 0.07 145;
+
+    --destructive: 0.58 0.2 22;
+    --destructive-foreground: 0.99 0.005 80;
+
+    --border: 0.88 0.02 75;
+    --input: 0.88 0.02 75;
+    --ring: 0.62 0.17 46;
+
+    --radius: 0.75rem;
+
+    --chart-1: 0.62 0.17 46;
+    --chart-2: 0.55 0.12 140;
+    --chart-3: 0.72 0.14 55;
+    --chart-4: 0.65 0.1 200;
+    --chart-5: 0.75 0.13 30;
+
+    --sidebar: 0.97 0.012 75;
+    --sidebar-foreground: 0.18 0.025 55;
+    --sidebar-primary: 0.62 0.17 46;
+    --sidebar-primary-foreground: 0.99 0.005 80;
+    --sidebar-accent: 0.93 0.015 75;
+    --sidebar-accent-foreground: 0.18 0.025 55;
+    --sidebar-border: 0.88 0.02 75;
+    --sidebar-ring: 0.62 0.17 46;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .grain-overlay {
+    position: relative;
+  }
+  .grain-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    border-radius: inherit;
+  }
+
+  .recipe-card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .recipe-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px -8px oklch(0.62 0.17 46 / 0.2);
+  }
+}
