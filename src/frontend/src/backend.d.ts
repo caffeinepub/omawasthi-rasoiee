@@ -7,6 +7,11 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface RecipeIngredient {
+    name: string;
+    unit: string;
+    amount: string;
+}
 export interface Recipe {
     id: bigint;
     title: string;
@@ -29,10 +34,12 @@ export interface Ingredient {
 export interface UserProfile {
     name: string;
 }
-export interface RecipeIngredient {
-    name: string;
-    unit: string;
-    amount: string;
+export interface RegisteredUser {
+    principal: Principal;
+    naam: string;
+    email: string;
+    mobile: string;
+    registeredAt: bigint;
 }
 export enum UserRole {
     admin = "admin",
@@ -51,12 +58,15 @@ export interface backendInterface {
     getFavorites(): Promise<Array<bigint>>;
     getIngredient(name: string): Promise<Ingredient | null>;
     getRecipe(id: bigint): Promise<Recipe | null>;
+    getRegisteredUsers(): Promise<Array<RegisteredUser>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     initializeSeeds(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isFavorite(recipeId: bigint): Promise<boolean>;
+    isUserRegistered(): Promise<boolean>;
     listIngredients(): Promise<Array<Ingredient>>;
     listRecipes(): Promise<Array<Recipe>>;
+    registerUser(naam: string, email: string, mobile: string): Promise<void>;
     removeFavorite(recipeId: bigint): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchRecipes(keyword: string): Promise<Array<Recipe>>;

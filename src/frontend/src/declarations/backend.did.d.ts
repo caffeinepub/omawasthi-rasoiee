@@ -34,6 +34,13 @@ export interface RecipeIngredient {
   'unit' : string,
   'amount' : string,
 }
+export interface RegisteredUser {
+  'principal' : Principal,
+  'naam' : string,
+  'email' : string,
+  'mobile' : string,
+  'registeredAt' : bigint,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -51,12 +58,15 @@ export interface _SERVICE {
   'getFavorites' : ActorMethod<[], Array<bigint>>,
   'getIngredient' : ActorMethod<[string], [] | [Ingredient]>,
   'getRecipe' : ActorMethod<[bigint], [] | [Recipe]>,
+  'getRegisteredUsers' : ActorMethod<[], Array<RegisteredUser>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'initializeSeeds' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isFavorite' : ActorMethod<[bigint], boolean>,
+  'isUserRegistered' : ActorMethod<[], boolean>,
   'listIngredients' : ActorMethod<[], Array<Ingredient>>,
   'listRecipes' : ActorMethod<[], Array<Recipe>>,
+  'registerUser' : ActorMethod<[string, string, string], undefined>,
   'removeFavorite' : ActorMethod<[bigint], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'searchRecipes' : ActorMethod<[string], Array<Recipe>>,

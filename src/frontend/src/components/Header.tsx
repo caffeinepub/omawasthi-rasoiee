@@ -6,13 +6,14 @@ import {
   Heart,
   LogIn,
   LogOut,
+  MessageCircle,
   Settings,
+  Shield,
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
+import type { View } from "../App";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-
-type View = "browse" | "detail" | "form" | "ingredients";
 
 interface HeaderProps {
   currentView: View;
@@ -102,6 +103,28 @@ export default function Header({
               Ingredients
             </Button>
           )}
+          {isAdmin && (
+            <Button
+              variant={currentView === "admin" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => onNavigate("admin")}
+              className="gap-2"
+              data-ocid="nav.admin.link"
+            >
+              <Shield className="w-4 h-4" />
+              Admin
+            </Button>
+          )}
+          <Button
+            variant={currentView === "contact" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onNavigate("contact")}
+            className="gap-2"
+            data-ocid="nav.contact.link"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Contact
+          </Button>
         </nav>
 
         {/* Auth */}

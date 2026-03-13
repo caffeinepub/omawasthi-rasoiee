@@ -1,28 +1,28 @@
-# Recipes Book
+# omawasthi rasoiee
 
 ## Current State
-New project. No existing code.
+- App has Contact page (card layout, no photo, avatar initials only)
+- Admin panel accessible only to Internet Identity admin via nav tab
+- Fonts: Fraunces + Figtree loaded via local woff2 (may fail to load)
+- User registration modal already implemented
 
 ## Requested Changes (Diff)
 
 ### Add
-- Recipe browsing: list all recipes with search and category filter
-- Recipe detail view: full recipe with ingredients, steps, and metadata
-- Recipe CRUD: create, edit, and delete recipes with complex form (title, description, category, prep/cook time, servings, image URL, ingredients list, step-by-step instructions)
-- Ingredient management: global ingredient library with CRUD (name, unit, category)
-- Favorites: authenticated users can save/unsave recipes to a personal favorites list
-- User authentication via authorization component
-- Sample seed data for recipes and ingredients
+- Hash-based admin URL: when `window.location.hash === '#admin-omawasthi07122006'`, auto-navigate to admin view
+- Owner photo on Contact page using `/assets/uploads/IMG-20251202-WA0007-1.jpg`
+- Animated owner intro section: photo slides in from left, text on right: "I am Om Awasthi, the owner of this app. If you have any problem, please contact me"
 
 ### Modify
-N/A
+- ContactPage: redesign with hero layout -- photo (left, animated slide-in) + owner message (right), then contact details below
+- index.css: fix fonts by switching to Google Fonts @import for Fraunces + Figtree (reliable loading)
+- App.tsx: add useEffect to detect URL hash and auto-navigate to admin view
 
 ### Remove
-N/A
+- Nothing removed
 
 ## Implementation Plan
-1. Backend: recipes store (id, title, description, category, prepTime, cookTime, servings, imageUrl, ingredients[], steps[], authorId, createdAt), ingredients store (id, name, unit, category), favorites per user
-2. Backend APIs: CRUD for recipes, CRUD for ingredients, toggle/list favorites, search + filter recipes
-3. Frontend: 4 main views - Browse (recipe grid), Recipe Detail, Recipe Form (create/edit), Ingredients Manager
-4. Navigation with auth-aware header
-5. Complex form: dynamic ingredient rows (add/remove), dynamic step rows, validation
+1. Fix index.css fonts via @import from Google Fonts
+2. Update ContactPage.tsx: hero section with uploaded photo (left) + animated owner message (right), contact details below
+3. Update App.tsx: useEffect to check window.location.hash on mount, if matches secret, navigate to admin
+4. Admin URL for user: append `#admin-omawasthi07122006` to app URL

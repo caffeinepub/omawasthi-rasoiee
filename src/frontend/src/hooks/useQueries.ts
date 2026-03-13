@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Ingredient, Recipe, UserProfile } from "../backend.d";
+import type {
+  Ingredient,
+  Recipe,
+  RegisteredUser,
+  UserProfile,
+} from "../backend.d";
 import { useActor } from "./useActor";
+import { useInternetIdentity } from "./useInternetIdentity";
 
 export function useListRecipes() {
   const { actor, isFetching } = useActor();
@@ -93,6 +99,32 @@ export function useGetCallerUserProfile() {
   };
 }
 
+export function useIsUserRegistered() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<boolean>({
+    queryKey: ["isUserRegistered"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isUserRegistered();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
+export function useGetRegisteredUsers() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<RegisteredUser[]>({
+    queryKey: ["registeredUsers"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getRegisteredUsers();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
 export function useCreateRecipe() {
   const { actor } = useActor();
   const qc = useQueryClient();
@@ -174,6 +206,29 @@ export function useSaveUserProfile() {
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["currentUserProfile"] }),
+  });
+}
+
+export function useRegisterUser() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      naam,
+      email,
+      mobile,
+    }: {
+      naam: string;
+      email: string;
+      mobile: string;
+    }) => {
+      if (!actor) throw new Error("Not authenticated");
+      return actor.registerUser(naam, email, mobile);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["isUserRegistered"] });
+      qc.invalidateQueries({ queryKey: ["registeredUsers"] });
+    },
   });
 }
 

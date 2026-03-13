@@ -89,6 +89,11 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface RecipeIngredient {
+    name: string;
+    unit: string;
+    amount: string;
+}
 export interface Recipe {
     id: bigint;
     title: string;
@@ -111,10 +116,12 @@ export interface Ingredient {
 export interface UserProfile {
     name: string;
 }
-export interface RecipeIngredient {
-    name: string;
-    unit: string;
-    amount: string;
+export interface RegisteredUser {
+    principal: Principal;
+    naam: string;
+    email: string;
+    mobile: string;
+    registeredAt: bigint;
 }
 export enum UserRole {
     admin = "admin",
@@ -134,12 +141,15 @@ export interface backendInterface {
     getFavorites(): Promise<Array<bigint>>;
     getIngredient(name: string): Promise<Ingredient | null>;
     getRecipe(id: bigint): Promise<Recipe | null>;
+    getRegisteredUsers(): Promise<Array<RegisteredUser>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     initializeSeeds(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     isFavorite(recipeId: bigint): Promise<boolean>;
+    isUserRegistered(): Promise<boolean>;
     listIngredients(): Promise<Array<Ingredient>>;
     listRecipes(): Promise<Array<Recipe>>;
+    registerUser(naam: string, email: string, mobile: string): Promise<void>;
     removeFavorite(recipeId: bigint): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchRecipes(keyword: string): Promise<Array<Recipe>>;
@@ -316,6 +326,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getRegisteredUsers(): Promise<Array<RegisteredUser>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getRegisteredUsers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getRegisteredUsers();
+            return result;
+        }
+    }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
@@ -372,6 +396,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async isUserRegistered(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isUserRegistered();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isUserRegistered();
+            return result;
+        }
+    }
     async listIngredients(): Promise<Array<Ingredient>> {
         if (this.processError) {
             try {
@@ -397,6 +435,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.listRecipes();
+            return result;
+        }
+    }
+    async registerUser(arg0: string, arg1: string, arg2: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.registerUser(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.registerUser(arg0, arg1, arg2);
             return result;
         }
     }

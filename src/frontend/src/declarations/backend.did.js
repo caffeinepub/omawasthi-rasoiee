@@ -38,6 +38,13 @@ export const Recipe = IDL.Record({
   'servings' : IDL.Nat,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const RegisteredUser = IDL.Record({
+  'principal' : IDL.Principal,
+  'naam' : IDL.Text,
+  'email' : IDL.Text,
+  'mobile' : IDL.Text,
+  'registeredAt' : IDL.Int,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -52,6 +59,7 @@ export const idlService = IDL.Service({
   'getFavorites' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
   'getIngredient' : IDL.Func([IDL.Text], [IDL.Opt(Ingredient)], ['query']),
   'getRecipe' : IDL.Func([IDL.Nat], [IDL.Opt(Recipe)], ['query']),
+  'getRegisteredUsers' : IDL.Func([], [IDL.Vec(RegisteredUser)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -60,8 +68,10 @@ export const idlService = IDL.Service({
   'initializeSeeds' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isFavorite' : IDL.Func([IDL.Nat], [IDL.Bool], ['query']),
+  'isUserRegistered' : IDL.Func([], [IDL.Bool], ['query']),
   'listIngredients' : IDL.Func([], [IDL.Vec(Ingredient)], ['query']),
   'listRecipes' : IDL.Func([], [IDL.Vec(Recipe)], ['query']),
+  'registerUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'removeFavorite' : IDL.Func([IDL.Nat], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'searchRecipes' : IDL.Func([IDL.Text], [IDL.Vec(Recipe)], ['query']),
@@ -101,6 +111,13 @@ export const idlFactory = ({ IDL }) => {
     'servings' : IDL.Nat,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const RegisteredUser = IDL.Record({
+    'principal' : IDL.Principal,
+    'naam' : IDL.Text,
+    'email' : IDL.Text,
+    'mobile' : IDL.Text,
+    'registeredAt' : IDL.Int,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -115,6 +132,7 @@ export const idlFactory = ({ IDL }) => {
     'getFavorites' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
     'getIngredient' : IDL.Func([IDL.Text], [IDL.Opt(Ingredient)], ['query']),
     'getRecipe' : IDL.Func([IDL.Nat], [IDL.Opt(Recipe)], ['query']),
+    'getRegisteredUsers' : IDL.Func([], [IDL.Vec(RegisteredUser)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -123,8 +141,10 @@ export const idlFactory = ({ IDL }) => {
     'initializeSeeds' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isFavorite' : IDL.Func([IDL.Nat], [IDL.Bool], ['query']),
+    'isUserRegistered' : IDL.Func([], [IDL.Bool], ['query']),
     'listIngredients' : IDL.Func([], [IDL.Vec(Ingredient)], ['query']),
     'listRecipes' : IDL.Func([], [IDL.Vec(Recipe)], ['query']),
+    'registerUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'removeFavorite' : IDL.Func([IDL.Nat], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'searchRecipes' : IDL.Func([IDL.Text], [IDL.Vec(Recipe)], ['query']),

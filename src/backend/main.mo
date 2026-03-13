@@ -6,11 +6,11 @@ import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
-
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-actor {
+// Singleton actors require persistent keyword
+persistent actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
@@ -45,12 +45,21 @@ actor {
     createdAt : Int;
   };
 
+  public type RegisteredUser = {
+    principal : Principal;
+    naam : Text;
+    email : Text;
+    mobile : Text;
+    registeredAt : Int;
+  };
+
   var nextRecipeId = 1;
 
   let recipes = Map.empty<Nat, Recipe>();
   let ingredients = Map.empty<Text, Ingredient>();
   let userFavorites = Map.empty<Principal, Set.Set<Nat>>();
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let registeredUsers = Map.empty<Principal, RegisteredUser>();
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
@@ -302,6 +311,47 @@ actor {
 
     for (ingredient in sampleIngredients.values()) {
       ingredients.add(ingredient.name, ingredient);
+    };
+  };
+
+  // User Registration
+  public shared ({ caller }) func registerUser(naam : Text, email : Text, mobile : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only logged in users can register");
+    };
+
+    switch (registeredUsers.get(caller)) {
+      case (?_) {
+        Runtime.trap("User already registered");
+      };
+      case (null) {
+        let user : RegisteredUser = {
+          principal = caller;
+          naam;
+          email;
+          mobile;
+          registeredAt = Time.now();
+        };
+        registeredUsers.add(caller, user);
+      };
+    };
+  };
+
+  public query ({ caller }) func getRegisteredUsers() : async [RegisteredUser] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can view registered users");
+    };
+    registeredUsers.values().toArray();
+  };
+
+  public query ({ caller }) func isUserRegistered() : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only logged in users can check registration status");
+    };
+
+    switch (registeredUsers.get(caller)) {
+      case (?_) { true };
+      case (null) { false };
     };
   };
 };
