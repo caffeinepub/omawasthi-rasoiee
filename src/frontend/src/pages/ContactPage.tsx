@@ -1,4 +1,5 @@
-import { Instagram, Mail, Phone } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Instagram, Mail, MessageCircle, Phone } from "lucide-react";
 import { motion } from "motion/react";
 
 const contacts = [
@@ -8,6 +9,8 @@ const contacts = [
     value: "8081024044",
     href: "tel:8081024044",
     ocid: "contact.phone.link",
+    color: "text-green-600",
+    bg: "bg-green-50",
   },
   {
     icon: Mail,
@@ -15,6 +18,8 @@ const contacts = [
     value: "omawasthi379@gmail.com",
     href: "mailto:omawasthi379@gmail.com",
     ocid: "contact.email.link",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
   },
   {
     icon: Instagram,
@@ -22,6 +27,8 @@ const contacts = [
     value: "@om_awasthi11",
     href: "https://instagram.com/om_awasthi11",
     ocid: "contact.instagram.link",
+    color: "text-pink-600",
+    bg: "bg-pink-50",
   },
 ];
 
@@ -57,7 +64,6 @@ export default function ContactPage() {
             className="shrink-0"
           >
             <div className="relative">
-              {/* Decorative glow */}
               <div
                 aria-hidden="true"
                 className="absolute inset-0 rounded-3xl scale-105"
@@ -72,7 +78,6 @@ export default function ContactPage() {
                 className="relative w-56 h-72 md:w-64 md:h-80 object-cover rounded-3xl shadow-2xl border-4 border-card"
                 style={{ objectPosition: "top center" }}
               />
-              {/* Floating badge */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -182,6 +187,66 @@ export default function ContactPage() {
             </motion.div>
           </motion.div>
         </div>
+      </div>
+
+      {/* Reach out section */}
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+        >
+          <Card
+            className="border-primary/20 bg-gradient-to-br from-primary/5 to-card"
+            data-ocid="contact.card"
+          >
+            <CardContent className="p-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground mb-2">
+                    App mein koi problem hai?
+                  </h2>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    Neeche diye gaye contact details par seedha reach karein.
+                    Main jaldi se aapki madad karunga. Koi bhi sawaal ya
+                    suggestion ke liye bhi contact kar sakte hain!
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href="tel:8081024044"
+                      data-ocid="contact.phone.button"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors shadow-sm"
+                    >
+                      <Phone className="w-4 h-4" />
+                      Call Now
+                    </a>
+                    <a
+                      href="mailto:omawasthi379@gmail.com"
+                      data-ocid="contact.email.button"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Send Email
+                    </a>
+                    <a
+                      href="https://instagram.com/om_awasthi11"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-ocid="contact.instagram.button"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pink-600 text-white font-semibold text-sm hover:bg-pink-700 transition-colors shadow-sm"
+                    >
+                      <Instagram className="w-4 h-4" />
+                      Instagram
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );
