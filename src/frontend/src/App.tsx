@@ -125,15 +125,7 @@ function AppInner() {
 
       <footer className="mt-16 border-t border-border bg-card/50">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()}. Built with ❤️ using{" "}
-          <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            caffeine.ai
-          </a>
+          Built by Om Awasthi - The App Developer
         </div>
       </footer>
 
