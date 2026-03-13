@@ -114,14 +114,13 @@ export function useIsUserRegistered() {
 
 export function useGetRegisteredUsers() {
   const { actor, isFetching } = useActor();
-  const { identity } = useInternetIdentity();
   return useQuery<RegisteredUser[]>({
     queryKey: ["registeredUsers"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getRegisteredUsers();
     },
-    enabled: !!actor && !isFetching && !!identity,
+    enabled: !!actor && !isFetching,
   });
 }
 

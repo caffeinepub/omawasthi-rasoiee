@@ -25,12 +25,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { View } from "../App";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useLocalAuth } from "../hooks/useLocalAuth";
 
 interface HeaderProps {
   currentView: View;
   onNavigate: (view: View) => void;
   isAdmin: boolean;
   userName: string | null;
+  onLoginClick: () => void;
 }
 
 export default function Header({
@@ -38,27 +40,21 @@ export default function Header({
   onNavigate,
   isAdmin,
   userName,
+  onLoginClick,
 }: HeaderProps) {
-  const { login, clear, loginStatus, identity } = useInternetIdentity();
+  const { clear, identity } = useInternetIdentity();
+  const { localUser, localLogout } = useLocalAuth();
   const queryClient = useQueryClient();
-  const isAuthenticated = !!identity;
-  const isLoggingIn = loginStatus === "logging-in";
+  const isAuthenticated = !!identity || !!localUser;
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleAuth = async () => {
-    if (isAuthenticated) {
+  const handleLogout = async () => {
+    localLogout();
+    if (identity) {
       await clear();
       queryClient.clear();
-    } else {
-      try {
-        await login();
-      } catch (error: any) {
-        if (error.message === "User is already authenticated") {
-          await clear();
-          setTimeout(() => login(), 300);
-        }
-      }
     }
+    window.location.reload();
   };
 
   const handleShare = async () => {
@@ -80,6 +76,8 @@ export default function Header({
     setMobileOpen(false);
   };
 
+  const displayName = userName || localUser?.name || null;
+
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border shadow-xs">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -94,7 +92,7 @@ export default function Header({
             <ChefHat className="w-4.5 h-4.5 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-semibold text-foreground tracking-tight">
-            Recipes Book
+            omawasthi rasoiee
           </span>
         </motion.div>
 
@@ -170,17 +168,17 @@ export default function Header({
 
         {/* Right: Auth + mobile menu */}
         <div className="flex items-center gap-2">
-          {isAuthenticated && userName && (
+          {isAuthenticated && displayName && (
             <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
-              <span className="font-medium text-foreground">{userName}</span>
+              <span className="font-medium text-foreground">{displayName}</span>
             </div>
           )}
           {isAuthenticated ? (
             <Button
               variant="outline"
               size="sm"
-              onClick={handleAuth}
+              onClick={handleLogout}
               className="gap-2"
               data-ocid="nav.logout.button"
             >
@@ -190,13 +188,12 @@ export default function Header({
           ) : (
             <Button
               size="sm"
-              onClick={handleAuth}
-              disabled={isLoggingIn}
+              onClick={onLoginClick}
               className="gap-2"
               data-ocid="nav.login.button"
             >
               <LogIn className="w-4 h-4" />
-              {isLoggingIn ? "Signing in..." : "Sign In"}
+              Sign In
             </Button>
           )}
 
@@ -298,7 +295,7 @@ export default function Header({
                       variant="outline"
                       className="w-full gap-2"
                       onClick={() => {
-                        handleAuth();
+                        handleLogout();
                         setMobileOpen(false);
                       }}
                       data-ocid="nav.mobile.logout.button"
@@ -310,14 +307,13 @@ export default function Header({
                     <Button
                       className="w-full gap-2"
                       onClick={() => {
-                        handleAuth();
                         setMobileOpen(false);
+                        onLoginClick();
                       }}
-                      disabled={isLoggingIn}
                       data-ocid="nav.mobile.login.button"
                     >
                       <LogIn className="w-4 h-4" />
-                      {isLoggingIn ? "Signing in..." : "Sign In"}
+                      Sign In / Sign Up
                     </Button>
                   )}
                 </div>

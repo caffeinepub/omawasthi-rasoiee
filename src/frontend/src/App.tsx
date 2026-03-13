@@ -4,9 +4,11 @@ import { Instagram, Mail, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Recipe } from "./backend.d";
 import Header from "./components/Header";
+import LoginModal from "./components/LoginModal";
 import ProfileSetupModal from "./components/ProfileSetupModal";
 import RegistrationModal from "./components/RegistrationModal";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import { useLocalAuth } from "./hooks/useLocalAuth";
 import {
   useGetCallerUserProfile,
   useIsAdmin,
@@ -39,19 +41,23 @@ export type View =
 function AppInner() {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
+  const { isLocalAdmin, localUser } = useLocalAuth();
 
   const [view, setView] = useState<View>("browse");
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [editRecipe, setEditRecipe] = useState<Recipe | null>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const {
     data: userProfile,
     isLoading: profileLoading,
     isFetched: profileFetched,
   } = useGetCallerUserProfile();
-  const { data: isAdmin = false } = useIsAdmin();
+  const { data: isAdminFromBackend = false } = useIsAdmin();
   const { data: isRegistered, isFetched: registrationFetched } =
     useIsUserRegistered();
+
+  const isAdmin = isAdminFromBackend || isLocalAdmin;
 
   const showProfileSetup =
     isAuthenticated &&
@@ -73,12 +79,12 @@ function AppInner() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !localUser) {
       setView("browse");
       setSelectedRecipe(null);
       setEditRecipe(null);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, localUser]);
 
   const navigateTo = (v: View) => {
     setView(v);
@@ -123,6 +129,7 @@ function AppInner() {
         onNavigate={navigateTo}
         isAdmin={isAdmin}
         userName={userProfile?.name ?? null}
+        onLoginClick={() => setLoginModalOpen(true)}
       />
 
       <main>
@@ -186,6 +193,8 @@ function AppInner() {
           </div>
         </div>
       </footer>
+
+      <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
 
       <ProfileSetupModal
         open={showProfileSetup}
