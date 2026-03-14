@@ -10,12 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useAddFavorite,
-  useDeleteRecipe,
-  useGetFavorites,
-  useRemoveFavorite,
-} from "@/hooks/useQueries";
+import { useDeleteRecipe } from "@/hooks/useQueries";
 import {
   ArrowLeft,
   ChefHat,
@@ -31,7 +26,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Recipe } from "../backend.d";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useLocalAuth } from "../hooks/useLocalAuth";
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -46,39 +41,45 @@ export default function RecipeDetail({
   onEdit,
   isAdmin,
 }: RecipeDetailProps) {
-  const { identity } = useInternetIdentity();
-  const isAuthenticated = !!identity;
-  const isAuthor =
-    identity &&
-    recipe.authorId.toString() === identity.getPrincipal().toString();
-  const canModify = isAuthor || isAdmin;
+  const { localUser } = useLocalAuth();
+  const isAuthenticated = !!localUser || isAdmin;
+  const canModify = isAuthenticated;
 
-  const { data: favorites = [] } = useGetFavorites();
-  const addFavorite = useAddFavorite();
-  const removeFavorite = useRemoveFavorite();
   const deleteRecipe = useDeleteRecipe();
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const isFavorite = favorites.some(
-    (f) => f.toString() === recipe.id.toString(),
-  );
+  const [isFavorite, setIsFavorite] = useState(() => {
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem("favorites") || "[]",
+      ) as string[];
+      return stored.includes(recipe.id.toString());
+    } catch {
+      return false;
+    }
+  });
 
-  const toggleFavorite = async () => {
+  const toggleFavorite = () => {
     if (!isAuthenticated) {
       toast.error("Sign in to save favorites");
       return;
     }
-    try {
-      if (isFavorite) {
-        await removeFavorite.mutateAsync(recipe.id);
-        toast.success("Removed from favorites");
-      } else {
-        await addFavorite.mutateAsync(recipe.id);
-        toast.success("Added to favorites");
+    const stored = (() => {
+      try {
+        return JSON.parse(
+          localStorage.getItem("favorites") || "[]",
+        ) as string[];
+      } catch {
+        return [] as string[];
       }
-    } catch {
-      toast.error("Failed to update favorites");
-    }
+    })();
+    const id = recipe.id.toString();
+    const next = stored.includes(id)
+      ? stored.filter((f) => f !== id)
+      : [...stored, id];
+    localStorage.setItem("favorites", JSON.stringify(next));
+    setIsFavorite(!isFavorite);
+    toast.success(isFavorite ? "Removed from favorites" : "Added to favorites");
   };
 
   const handleDelete = async () => {

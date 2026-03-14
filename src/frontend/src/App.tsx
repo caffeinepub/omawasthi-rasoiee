@@ -4,29 +4,21 @@ import { Instagram, Mail, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Recipe } from "./backend.d";
 import Header from "./components/Header";
-import LoginModal from "./components/LoginModal";
-import ProfileSetupModal from "./components/ProfileSetupModal";
-import RegistrationModal from "./components/RegistrationModal";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useLocalAuth } from "./hooks/useLocalAuth";
-import {
-  useGetCallerUserProfile,
-  useIsAdmin,
-  useIsUserRegistered,
-} from "./hooks/useQueries";
+import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPanel from "./pages/AdminPanel";
 import BrowseView from "./pages/BrowseView";
 import ContactPage from "./pages/ContactPage";
 import IngredientsManager from "./pages/IngredientsManager";
+import JobApplicationPage from "./pages/JobApplicationPage";
 import RecipeDetail from "./pages/RecipeDetail";
 import RecipeForm from "./pages/RecipeForm";
+import UserAuthPage from "./pages/UserAuthPage";
+import WelcomePage from "./pages/WelcomePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-    },
+    queries: { staleTime: 30_000, retry: 1 },
   },
 });
 
@@ -38,53 +30,31 @@ export type View =
   | "contact"
   | "admin";
 
+type WelcomeScreen =
+  | "welcome"
+  | "userAuth"
+  | "adminLogin"
+  | "jobApply"
+  | "contactPublic";
+
 function AppInner() {
-  const { identity } = useInternetIdentity();
-  const isAuthenticated = !!identity;
   const { isLocalAdmin, localUser } = useLocalAuth();
 
+  const isLoggedIn = !!localUser || isLocalAdmin;
+
+  const [welcomeScreen, setWelcomeScreen] = useState<WelcomeScreen>("welcome");
   const [view, setView] = useState<View>("browse");
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [editRecipe, setEditRecipe] = useState<Recipe | null>(null);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  const {
-    data: userProfile,
-    isLoading: profileLoading,
-    isFetched: profileFetched,
-  } = useGetCallerUserProfile();
-  const { data: isAdminFromBackend = false } = useIsAdmin();
-  const { data: isRegistered, isFetched: registrationFetched } =
-    useIsUserRegistered();
+  const isAdmin = isLocalAdmin;
 
-  const isAdmin = isAdminFromBackend || isLocalAdmin;
-
-  const showProfileSetup =
-    isAuthenticated &&
-    !profileLoading &&
-    profileFetched &&
-    userProfile === null;
-
-  const showRegistrationModal =
-    isAuthenticated &&
-    !showProfileSetup &&
-    registrationFetched &&
-    isRegistered === false;
-
-  // Admin secret URL hash access
+  // Admin secret hash URL
   useEffect(() => {
     if (window.location.hash === "#admin-omawasthi07122006") {
-      setView("admin");
+      setWelcomeScreen("adminLogin");
     }
   }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated && !localUser) {
-      setView("browse");
-      setSelectedRecipe(null);
-      setEditRecipe(null);
-    }
-  }, [isAuthenticated, localUser]);
 
   const navigateTo = (v: View) => {
     setView(v);
@@ -92,35 +62,51 @@ function AppInner() {
     if (v !== "form") setEditRecipe(null);
   };
 
-  const handleSelectRecipe = (recipe: Recipe) => {
-    setSelectedRecipe(recipe);
-    setView("detail");
-  };
-
-  const handleAddRecipe = () => {
-    setEditRecipe(null);
-    setView("form");
-  };
-
-  const handleEditRecipe = (recipe: Recipe) => {
-    setEditRecipe(recipe);
-    setView("form");
-  };
-
-  const handleFormSuccess = (recipe?: Recipe) => {
-    if (recipe) {
-      setSelectedRecipe(recipe);
-      setView("detail");
-    } else {
-      setView("browse");
+  // ─── Pre-login welcome flow ───────────────────────────────────────────────
+  if (!isLoggedIn) {
+    if (welcomeScreen === "userAuth") {
+      return (
+        <>
+          <UserAuthPage onBack={() => setWelcomeScreen("welcome")} />
+          <Toaster richColors position="top-right" />
+        </>
+      );
     }
-  };
+    if (welcomeScreen === "adminLogin") {
+      return (
+        <>
+          <AdminLoginPage onBack={() => setWelcomeScreen("welcome")} />
+          <Toaster richColors position="top-right" />
+        </>
+      );
+    }
+    if (welcomeScreen === "jobApply") {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <JobApplicationPage onBack={() => setWelcomeScreen("welcome")} />
+          <Toaster richColors position="top-right" />
+        </QueryClientProvider>
+      );
+    }
+    if (welcomeScreen === "contactPublic") {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <ContactPage onBack={() => setWelcomeScreen("welcome")} />
+          <Toaster richColors position="top-right" />
+        </QueryClientProvider>
+      );
+    }
+    // Default welcome screen
+    return (
+      <>
+        <WelcomePage onNavigate={setWelcomeScreen} />
+        <Toaster richColors position="top-right" />
+      </>
+    );
+  }
 
-  const handleBack = () => {
-    setView("browse");
-    setSelectedRecipe(null);
-    setEditRecipe(null);
-  };
+  // ─── Main app (logged in) ────────────────────────────────────────────────
+  const userName = isLocalAdmin ? "Om Awasthi" : (localUser?.name ?? null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,33 +114,56 @@ function AppInner() {
         currentView={view}
         onNavigate={navigateTo}
         isAdmin={isAdmin}
-        userName={userProfile?.name ?? null}
-        onLoginClick={() => setLoginModalOpen(true)}
+        userName={userName}
       />
 
       <main>
         {view === "browse" && (
           <BrowseView
-            onSelectRecipe={handleSelectRecipe}
-            onAddRecipe={handleAddRecipe}
+            onSelectRecipe={(recipe) => {
+              setSelectedRecipe(recipe);
+              setView("detail");
+            }}
+            onAddRecipe={() => {
+              setEditRecipe(null);
+              setView("form");
+            }}
           />
         )}
         {view === "detail" && selectedRecipe && (
           <RecipeDetail
             recipe={selectedRecipe}
-            onBack={handleBack}
-            onEdit={handleEditRecipe}
+            onBack={() => {
+              setView("browse");
+              setSelectedRecipe(null);
+            }}
+            onEdit={(recipe) => {
+              setEditRecipe(recipe);
+              setView("form");
+            }}
             isAdmin={isAdmin}
           />
         )}
         {view === "form" && (
           <RecipeForm
             editRecipe={editRecipe}
-            onBack={handleBack}
-            onSuccess={handleFormSuccess}
+            onBack={() => {
+              setView("browse");
+              setEditRecipe(null);
+            }}
+            onSuccess={(recipe) => {
+              if (recipe) {
+                setSelectedRecipe(recipe);
+                setView("detail");
+              } else {
+                setView("browse");
+              }
+            }}
           />
         )}
-        {view === "ingredients" && <IngredientsManager onBack={handleBack} />}
+        {view === "ingredients" && (
+          <IngredientsManager onBack={() => setView("browse")} />
+        )}
         {view === "contact" && <ContactPage />}
         {view === "admin" && <AdminPanel />}
       </main>
@@ -193,23 +202,6 @@ function AppInner() {
           </div>
         </div>
       </footer>
-
-      <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
-
-      <ProfileSetupModal
-        open={showProfileSetup}
-        onComplete={() =>
-          queryClient.invalidateQueries({ queryKey: ["currentUserProfile"] })
-        }
-      />
-
-      <RegistrationModal
-        open={showRegistrationModal}
-        onComplete={() => {
-          queryClient.invalidateQueries({ queryKey: ["isUserRegistered"] });
-          queryClient.invalidateQueries({ queryKey: ["registeredUsers"] });
-        }}
-      />
 
       <Toaster richColors position="top-right" />
     </div>

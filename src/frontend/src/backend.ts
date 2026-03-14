@@ -89,10 +89,46 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface RecipeIngredient {
+export interface LocalUser {
+    name: string;
+    email: string;
+    passwordHash: string;
+    registeredAt: bigint;
+}
+export type RegisterLocalUserResult = {
+    __kind__: "ok";
+    ok: null;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface Ingredient {
     name: string;
     unit: string;
-    amount: string;
+    category: string;
+}
+export interface RegisteredUser {
+    principal: Principal;
+    naam: string;
+    email: string;
+    mobile: string;
+    registeredAt: bigint;
+}
+export interface Feedback {
+    id: bigint;
+    name: string;
+    submittedAt: bigint;
+    email: string;
+    message: string;
+    phone: string;
+}
+export interface JobApplication {
+    id: bigint;
+    name: string;
+    post: string;
+    submittedAt: bigint;
+    email: string;
+    phone: string;
 }
 export interface Recipe {
     id: bigint;
@@ -108,20 +144,13 @@ export interface Recipe {
     category: string;
     servings: bigint;
 }
-export interface Ingredient {
-    name: string;
-    unit: string;
-    category: string;
-}
 export interface UserProfile {
     name: string;
 }
-export interface RegisteredUser {
-    principal: Principal;
-    naam: string;
-    email: string;
-    mobile: string;
-    registeredAt: bigint;
+export interface RecipeIngredient {
+    name: string;
+    unit: string;
+    amount: string;
 }
 export enum UserRole {
     admin = "admin",
@@ -134,12 +163,16 @@ export interface backendInterface {
     addIngredient(ingredient: Ingredient): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createRecipe(recipe: Recipe): Promise<bigint>;
+    deleteIngredient(name: string): Promise<void>;
     deleteRecipe(id: bigint): Promise<void>;
     filterByCategory(category: string): Promise<Array<Recipe>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getFavorites(): Promise<Array<bigint>>;
+    getFeedbackList(): Promise<Array<Feedback>>;
     getIngredient(name: string): Promise<Ingredient | null>;
+    getJobApplications(): Promise<Array<JobApplication>>;
+    getLocalUsers(): Promise<Array<LocalUser>>;
     getRecipe(id: bigint): Promise<Recipe | null>;
     getRegisteredUsers(): Promise<Array<RegisteredUser>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
@@ -149,13 +182,16 @@ export interface backendInterface {
     isUserRegistered(): Promise<boolean>;
     listIngredients(): Promise<Array<Ingredient>>;
     listRecipes(): Promise<Array<Recipe>>;
+    registerLocalUser(name: string, email: string, passwordHash: string): Promise<RegisterLocalUserResult>;
     registerUser(naam: string, email: string, mobile: string): Promise<void>;
     removeFavorite(recipeId: bigint): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchRecipes(keyword: string): Promise<Array<Recipe>>;
+    submitFeedback(name: string, email: string, phone: string, message: string): Promise<void>;
+    submitJobApplication(name: string, email: string, phone: string, post: string): Promise<void>;
     updateRecipe(id: bigint, updatedRecipe: Recipe): Promise<void>;
 }
-import type { Ingredient as _Ingredient, Recipe as _Recipe, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { Ingredient as _Ingredient, Recipe as _Recipe, RegisterLocalUserResult as _RegisterLocalUserResult, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -225,6 +261,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createRecipe(arg0);
+            return result;
+        }
+    }
+    async deleteIngredient(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteIngredient(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteIngredient(arg0);
             return result;
         }
     }
@@ -298,6 +348,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getFeedbackList(): Promise<Array<Feedback>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFeedbackList();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFeedbackList();
+            return result;
+        }
+    }
     async getIngredient(arg0: string): Promise<Ingredient | null> {
         if (this.processError) {
             try {
@@ -310,6 +374,34 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getIngredient(arg0);
             return from_candid_opt_n6(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getJobApplications(): Promise<Array<JobApplication>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getJobApplications();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getJobApplications();
+            return result;
+        }
+    }
+    async getLocalUsers(): Promise<Array<LocalUser>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLocalUsers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLocalUsers();
+            return result;
         }
     }
     async getRecipe(arg0: bigint): Promise<Recipe | null> {
@@ -438,6 +530,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async registerLocalUser(arg0: string, arg1: string, arg2: string): Promise<RegisterLocalUserResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.registerLocalUser(arg0, arg1, arg2);
+                return from_candid_RegisterLocalUserResult_n8(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.registerLocalUser(arg0, arg1, arg2);
+            return from_candid_RegisterLocalUserResult_n8(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async registerUser(arg0: string, arg1: string, arg2: string): Promise<void> {
         if (this.processError) {
             try {
@@ -494,6 +600,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async submitFeedback(arg0: string, arg1: string, arg2: string, arg3: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitFeedback(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitFeedback(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async submitJobApplication(arg0: string, arg1: string, arg2: string, arg3: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitJobApplication(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitJobApplication(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
     async updateRecipe(arg0: bigint, arg1: Recipe): Promise<void> {
         if (this.processError) {
             try {
@@ -508,6 +642,9 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+}
+function from_candid_RegisterLocalUserResult_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _RegisterLocalUserResult): RegisterLocalUserResult {
+    return from_candid_variant_n9(_uploadFile, _downloadFile, value);
 }
 function from_candid_UserRole_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n5(_uploadFile, _downloadFile, value);
@@ -529,6 +666,25 @@ function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uin
     guest: null;
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+}
+function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: null;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: null;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);

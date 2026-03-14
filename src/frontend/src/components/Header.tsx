@@ -11,7 +11,6 @@ import {
   BookOpen,
   ChefHat,
   Heart,
-  LogIn,
   LogOut,
   Menu,
   MessageCircle,
@@ -32,7 +31,6 @@ interface HeaderProps {
   onNavigate: (view: View) => void;
   isAdmin: boolean;
   userName: string | null;
-  onLoginClick: () => void;
 }
 
 export default function Header({
@@ -40,12 +38,10 @@ export default function Header({
   onNavigate,
   isAdmin,
   userName,
-  onLoginClick,
 }: HeaderProps) {
   const { clear, identity } = useInternetIdentity();
-  const { localUser, localLogout } = useLocalAuth();
+  const { localUser, isLocalAdmin, localLogout } = useLocalAuth();
   const queryClient = useQueryClient();
-  const isAuthenticated = !!identity || !!localUser;
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -76,7 +72,23 @@ export default function Header({
     setMobileOpen(false);
   };
 
-  const displayName = userName || localUser?.name || null;
+  const displayName =
+    userName || (isLocalAdmin ? "Om Awasthi" : null) || localUser?.name || null;
+
+  const navLinks = [
+    {
+      view: "browse" as View,
+      icon: BookOpen,
+      label: "Browse",
+      ocid: "nav.browse.link",
+    },
+    {
+      view: "contact" as View,
+      icon: MessageCircle,
+      label: "Contact",
+      ocid: "nav.contact.link",
+    },
+  ];
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border shadow-xs">
@@ -89,7 +101,7 @@ export default function Header({
           onClick={() => onNavigate("browse")}
         >
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <ChefHat className="w-4.5 h-4.5 text-primary-foreground" />
+            <ChefHat className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-semibold text-foreground tracking-tight">
             omawasthi rasoiee
@@ -98,62 +110,53 @@ export default function Header({
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
+          {navLinks.map(({ view, icon: Icon, label, ocid }) => (
+            <Button
+              key={view}
+              variant={currentView === view ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => onNavigate(view)}
+              className="gap-2"
+              data-ocid={ocid}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </Button>
+          ))}
           <Button
-            variant={currentView === "browse" ? "secondary" : "ghost"}
+            variant="ghost"
             size="sm"
             onClick={() => onNavigate("browse")}
             className="gap-2"
-            data-ocid="nav.browse.link"
+            data-ocid="nav.favorites.link"
           >
-            <BookOpen className="w-4 h-4" />
-            Browse
+            <Heart className="w-4 h-4" />
+            Favorites
           </Button>
-          {isAuthenticated && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onNavigate("browse")}
-              className="gap-2"
-              data-ocid="nav.favorites.link"
-            >
-              <Heart className="w-4 h-4" />
-              My Favorites
-            </Button>
-          )}
           {isAdmin && (
-            <Button
-              variant={currentView === "ingredients" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onNavigate("ingredients")}
-              className="gap-2"
-              data-ocid="nav.ingredients.link"
-            >
-              <Settings className="w-4 h-4" />
-              Ingredients
-            </Button>
+            <>
+              <Button
+                variant={currentView === "ingredients" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => onNavigate("ingredients")}
+                className="gap-2"
+                data-ocid="nav.ingredients.link"
+              >
+                <Settings className="w-4 h-4" />
+                Ingredients
+              </Button>
+              <Button
+                variant={currentView === "admin" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => onNavigate("admin")}
+                className="gap-2"
+                data-ocid="nav.admin.link"
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Button>
+            </>
           )}
-          {isAdmin && (
-            <Button
-              variant={currentView === "admin" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onNavigate("admin")}
-              className="gap-2"
-              data-ocid="nav.admin.link"
-            >
-              <Shield className="w-4 h-4" />
-              Admin
-            </Button>
-          )}
-          <Button
-            variant={currentView === "contact" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => onNavigate("contact")}
-            className="gap-2"
-            data-ocid="nav.contact.link"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Contact
-          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -166,36 +169,25 @@ export default function Header({
           </Button>
         </nav>
 
-        {/* Right: Auth + mobile menu */}
+        {/* Right: user + logout + mobile */}
         <div className="flex items-center gap-2">
-          {isAuthenticated && displayName && (
+          {displayName && (
             <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
               <span className="font-medium text-foreground">{displayName}</span>
+              {isAdmin && <Shield className="w-3.5 h-3.5 text-primary" />}
             </div>
           )}
-          {isAuthenticated ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2"
-              data-ocid="nav.logout.button"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={onLoginClick}
-              className="gap-2"
-              data-ocid="nav.login.button"
-            >
-              <LogIn className="w-4 h-4" />
-              Sign In
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-2"
+            data-ocid="nav.logout.button"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Logout</span>
+          </Button>
 
           {/* Mobile hamburger */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -232,40 +224,38 @@ export default function Header({
                   <BookOpen className="w-4 h-4" />
                   Browse Recipes
                 </Button>
-                {isAuthenticated && (
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-3"
-                    onClick={() => handleMobileNavigate("browse")}
-                    data-ocid="nav.mobile.favorites.link"
-                  >
-                    <Heart className="w-4 h-4" />
-                    My Favorites
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3"
+                  onClick={() => handleMobileNavigate("browse")}
+                  data-ocid="nav.mobile.favorites.link"
+                >
+                  <Heart className="w-4 h-4" />
+                  Favorites
+                </Button>
                 {isAdmin && (
-                  <Button
-                    variant={
-                      currentView === "ingredients" ? "secondary" : "ghost"
-                    }
-                    className="w-full justify-start gap-3"
-                    onClick={() => handleMobileNavigate("ingredients")}
-                    data-ocid="nav.mobile.ingredients.link"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Ingredients
-                  </Button>
-                )}
-                {isAdmin && (
-                  <Button
-                    variant={currentView === "admin" ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-3"
-                    onClick={() => handleMobileNavigate("admin")}
-                    data-ocid="nav.mobile.admin.link"
-                  >
-                    <Shield className="w-4 h-4" />
-                    Admin Panel
-                  </Button>
+                  <>
+                    <Button
+                      variant={
+                        currentView === "ingredients" ? "secondary" : "ghost"
+                      }
+                      className="w-full justify-start gap-3"
+                      onClick={() => handleMobileNavigate("ingredients")}
+                      data-ocid="nav.mobile.ingredients.link"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Ingredients
+                    </Button>
+                    <Button
+                      variant={currentView === "admin" ? "secondary" : "ghost"}
+                      className="w-full justify-start gap-3"
+                      onClick={() => handleMobileNavigate("admin")}
+                      data-ocid="nav.mobile.admin.link"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Admin Panel
+                    </Button>
+                  </>
                 )}
                 <Button
                   variant={currentView === "contact" ? "secondary" : "ghost"}
@@ -288,34 +278,19 @@ export default function Header({
                   <Share2 className="w-4 h-4" />
                   Share App
                 </Button>
-
                 <div className="border-t border-border mt-4 pt-4">
-                  {isAuthenticated ? (
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      onClick={() => {
-                        handleLogout();
-                        setMobileOpen(false);
-                      }}
-                      data-ocid="nav.mobile.logout.button"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full gap-2"
-                      onClick={() => {
-                        setMobileOpen(false);
-                        onLoginClick();
-                      }}
-                      data-ocid="nav.mobile.login.button"
-                    >
-                      <LogIn className="w-4 h-4" />
-                      Sign In / Sign Up
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => {
+                      handleLogout();
+                      setMobileOpen(false);
+                    }}
+                    data-ocid="nav.mobile.logout.button"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </Button>
                 </div>
               </nav>
             </SheetContent>

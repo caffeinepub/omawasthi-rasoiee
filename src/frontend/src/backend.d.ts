@@ -1,16 +1,37 @@
 import type { Principal } from "@icp-sdk/core/principal";
-export interface Some<T> {
-    __kind__: "Some";
-    value: T;
+export interface LocalUser {
+    name: string;
+    email: string;
+    passwordHash: string;
+    registeredAt: bigint;
 }
-export interface None {
-    __kind__: "None";
-}
-export type Option<T> = Some<T> | None;
-export interface RecipeIngredient {
+export type RegisterLocalUserResult = {
+    __kind__: "ok";
+    ok: null;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface Ingredient {
     name: string;
     unit: string;
-    amount: string;
+    category: string;
+}
+export interface Feedback {
+    id: bigint;
+    name: string;
+    submittedAt: bigint;
+    email: string;
+    message: string;
+    phone: string;
+}
+export interface JobApplication {
+    id: bigint;
+    name: string;
+    post: string;
+    submittedAt: bigint;
+    email: string;
+    phone: string;
 }
 export interface Recipe {
     id: bigint;
@@ -26,49 +47,28 @@ export interface Recipe {
     category: string;
     servings: bigint;
 }
-export interface Ingredient {
+export interface RecipeIngredient {
     name: string;
     unit: string;
-    category: string;
-}
-export interface UserProfile {
-    name: string;
-}
-export interface RegisteredUser {
-    principal: Principal;
-    naam: string;
-    email: string;
-    mobile: string;
-    registeredAt: bigint;
-}
-export enum UserRole {
-    admin = "admin",
-    user = "user",
-    guest = "guest"
+    amount: string;
 }
 export interface backendInterface {
-    addFavorite(recipeId: bigint): Promise<void>;
     addIngredient(ingredient: Ingredient): Promise<void>;
-    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createRecipe(recipe: Recipe): Promise<bigint>;
+    deleteIngredient(name: string): Promise<void>;
     deleteRecipe(id: bigint): Promise<void>;
     filterByCategory(category: string): Promise<Array<Recipe>>;
-    getCallerUserProfile(): Promise<UserProfile | null>;
-    getCallerUserRole(): Promise<UserRole>;
-    getFavorites(): Promise<Array<bigint>>;
+    getFeedbackList(): Promise<Array<Feedback>>;
     getIngredient(name: string): Promise<Ingredient | null>;
+    getJobApplications(): Promise<Array<JobApplication>>;
+    getLocalUsers(): Promise<Array<LocalUser>>;
     getRecipe(id: bigint): Promise<Recipe | null>;
-    getRegisteredUsers(): Promise<Array<RegisteredUser>>;
-    getUserProfile(user: Principal): Promise<UserProfile | null>;
     initializeSeeds(): Promise<void>;
-    isCallerAdmin(): Promise<boolean>;
-    isFavorite(recipeId: bigint): Promise<boolean>;
-    isUserRegistered(): Promise<boolean>;
     listIngredients(): Promise<Array<Ingredient>>;
     listRecipes(): Promise<Array<Recipe>>;
-    registerUser(naam: string, email: string, mobile: string): Promise<void>;
-    removeFavorite(recipeId: bigint): Promise<void>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    registerLocalUser(name: string, email: string, passwordHash: string): Promise<RegisterLocalUserResult>;
     searchRecipes(keyword: string): Promise<Array<Recipe>>;
+    submitFeedback(name: string, email: string, phone: string, message: string): Promise<void>;
+    submitJobApplication(name: string, email: string, phone: string, post: string): Promise<void>;
     updateRecipe(id: bigint, updatedRecipe: Recipe): Promise<void>;
 }

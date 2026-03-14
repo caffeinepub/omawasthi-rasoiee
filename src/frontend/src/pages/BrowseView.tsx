@@ -2,13 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useAddFavorite,
-  useGetFavorites,
-  useInitializeSeeds,
-  useListRecipes,
-  useRemoveFavorite,
-} from "@/hooks/useQueries";
+import { useInitializeSeeds, useListRecipes } from "@/hooks/useQueries";
+import { Principal } from "@icp-sdk/core/principal";
 import {
   Clock,
   Heart,
@@ -21,7 +16,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Recipe } from "../backend.d";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useLocalAuth } from "../hooks/useLocalAuth";
 
 const CATEGORIES = ["All", "Breakfast", "Lunch", "Dinner", "Dessert", "Snack"];
 
@@ -29,7 +24,7 @@ const SEED_RECIPES: Recipe[] = [
   {
     id: 1n,
     title: "Grandmother's Sourdough Bread",
-    authorId: { toString: () => "seed" } as any,
+    authorId: Principal.anonymous(),
     createdAt: BigInt(Date.now()),
     cookTime: 45n,
     description:
@@ -55,7 +50,7 @@ const SEED_RECIPES: Recipe[] = [
   {
     id: 2n,
     title: "Roman Spaghetti Carbonara",
-    authorId: { toString: () => "seed" } as any,
+    authorId: Principal.anonymous(),
     createdAt: BigInt(Date.now()),
     cookTime: 20n,
     description:
@@ -81,11 +76,11 @@ const SEED_RECIPES: Recipe[] = [
   {
     id: 3n,
     title: "Thai Green Curry",
-    authorId: { toString: () => "seed" } as any,
+    authorId: Principal.anonymous(),
     createdAt: BigInt(Date.now()),
     cookTime: 30n,
     description:
-      "Fragrant, creamy Thai green curry with fresh vegetables and jasmine rice. A weeknight staple with restaurant-quality depth.",
+      "Fragrant, creamy Thai green curry with fresh vegetables and jasmine rice.",
     steps: [
       "Fry green curry paste in coconut cream",
       "Add chicken and coat well",
@@ -107,11 +102,11 @@ const SEED_RECIPES: Recipe[] = [
   {
     id: 4n,
     title: "Chocolate Lava Cake",
-    authorId: { toString: () => "seed" } as any,
+    authorId: Principal.anonymous(),
     createdAt: BigInt(Date.now()),
     cookTime: 12n,
     description:
-      "Individual warm chocolate cakes with a molten center that flows when cut. Serve with vanilla ice cream for perfection.",
+      "Individual warm chocolate cakes with a molten center. Serve with vanilla ice cream.",
     steps: [
       "Melt chocolate and butter together",
       "Whisk eggs, yolks, and sugar",
@@ -134,11 +129,11 @@ const SEED_RECIPES: Recipe[] = [
   {
     id: 5n,
     title: "Smashed Avocado Toast",
-    authorId: { toString: () => "seed" } as any,
+    authorId: Principal.anonymous(),
     createdAt: BigInt(Date.now()),
     cookTime: 5n,
     description:
-      "Creamy smashed avocado on toasted sourdough with poached eggs, microgreens, and everything bagel seasoning.",
+      "Creamy smashed avocado on toasted sourdough with poached eggs and microgreens.",
     steps: [
       "Toast thick sourdough slices",
       "Poach eggs in simmering water",
@@ -160,11 +155,11 @@ const SEED_RECIPES: Recipe[] = [
   {
     id: 6n,
     title: "Smash Burger with Crispy Fries",
-    authorId: { toString: () => "seed" } as any,
+    authorId: Principal.anonymous(),
     createdAt: BigInt(Date.now()),
     cookTime: 15n,
     description:
-      "Crispy-edged smash burgers on brioche buns with caramelized onions, special sauce, and skin-on fries.",
+      "Crispy-edged smash burgers on brioche buns with caramelized onions and special sauce.",
     steps: [
       "Form beef into loose balls",
       "Smash on screaming-hot griddle",
@@ -194,27 +189,30 @@ export default function BrowseView({
   onSelectRecipe,
   onAddRecipe,
 }: BrowseViewProps) {
-  const { identity } = useInternetIdentity();
-  const isAuthenticated = !!identity;
+  const { localUser, isLocalAdmin } = useLocalAuth();
+  const isAuthenticated = !!localUser || isLocalAdmin;
 
   const { data: backendRecipes, isLoading, isFetched } = useListRecipes();
-  const { data: favorites = [] } = useGetFavorites();
-  const addFavorite = useAddFavorite();
-  const removeFavorite = useRemoveFavorite();
   const initSeeds = useInitializeSeeds();
+
+  const [favorites, setFavorites] = useState<bigint[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("favorites") || "[]").map(BigInt);
+    } catch {
+      return [];
+    }
+  });
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [seedsInitialized, setSeedsInitialized] = useState(false);
 
-  // Use backend recipes if available, else seed data
   const allRecipes: Recipe[] = useMemo(() => {
     if (backendRecipes && backendRecipes.length > 0) return backendRecipes;
     return SEED_RECIPES;
   }, [backendRecipes]);
 
-  // Initialize seeds on first load if empty
   useEffect(() => {
     if (
       isFetched &&
@@ -223,11 +221,7 @@ export default function BrowseView({
       !seedsInitialized
     ) {
       setSeedsInitialized(true);
-      initSeeds.mutate(undefined, {
-        onError: () => {
-          // Seeds may not be available, use client-side seeds
-        },
-      });
+      initSeeds.mutate(undefined, { onError: () => {} });
     }
   }, [isFetched, backendRecipes, seedsInitialized, initSeeds]);
 
@@ -235,6 +229,16 @@ export default function BrowseView({
     () => new Set(favorites.map((f) => f.toString())),
     [favorites],
   );
+
+  const toggleFavorite = (id: bigint) => {
+    setFavorites((prev) => {
+      const next = prev.some((f) => f.toString() === id.toString())
+        ? prev.filter((f) => f.toString() !== id.toString())
+        : [...prev, id];
+      localStorage.setItem("favorites", JSON.stringify(next.map(String)));
+      return next;
+    });
+  };
 
   const filtered = useMemo(() => {
     let list = allRecipes;
@@ -262,24 +266,15 @@ export default function BrowseView({
     favoriteSet,
   ]);
 
-  const toggleFavorite = async (e: React.MouseEvent, recipe: Recipe) => {
+  const handleToggleFavorite = (e: React.MouseEvent, recipe: Recipe) => {
     e.stopPropagation();
     if (!isAuthenticated) {
       toast.error("Sign in to save favorites");
       return;
     }
     const isFav = favoriteSet.has(recipe.id.toString());
-    try {
-      if (isFav) {
-        await removeFavorite.mutateAsync(recipe.id);
-        toast.success("Removed from favorites");
-      } else {
-        await addFavorite.mutateAsync(recipe.id);
-        toast.success("Added to favorites");
-      }
-    } catch {
-      toast.error("Failed to update favorites");
-    }
+    toggleFavorite(recipe.id);
+    toast.success(isFav ? "Removed from favorites" : "Added to favorites");
   };
 
   return (
@@ -436,7 +431,7 @@ export default function BrowseView({
                   index={index + 1}
                   isFavorite={favoriteSet.has(recipe.id.toString())}
                   onSelect={() => onSelectRecipe(recipe)}
-                  onToggleFavorite={(e) => toggleFavorite(e, recipe)}
+                  onToggleFavorite={(e) => handleToggleFavorite(e, recipe)}
                   isAuthenticated={isAuthenticated}
                 />
               ))}
@@ -477,7 +472,6 @@ function RecipeCard({
       onClick={onSelect}
       data-ocid={`recipe.card.${index}`}
     >
-      {/* Image */}
       <div className="relative h-48 overflow-hidden bg-muted">
         {recipe.imageUrl ? (
           <img
@@ -491,7 +485,6 @@ function RecipeCard({
             <UtensilsCrossed className="w-12 h-12 text-muted-foreground/30" />
           </div>
         )}
-        {/* Category badge */}
         <div className="absolute top-3 left-3">
           <Badge
             variant="secondary"
@@ -500,7 +493,6 @@ function RecipeCard({
             {recipe.category}
           </Badge>
         </div>
-        {/* Favorite button */}
         {isAuthenticated && (
           <button
             type="button"
@@ -519,8 +511,6 @@ function RecipeCard({
           </button>
         )}
       </div>
-
-      {/* Content */}
       <div className="p-4">
         <h3 className="font-display font-semibold text-base text-card-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
           {recipe.title}

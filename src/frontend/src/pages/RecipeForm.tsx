@@ -11,13 +11,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateRecipe, useUpdateRecipe } from "@/hooks/useQueries";
-import { Principal } from "@dfinity/principal";
-import { ArrowLeft, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
+import { Principal } from "@icp-sdk/core/principal";
+import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Recipe, RecipeIngredient } from "../backend.d";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"];
 
@@ -34,12 +33,16 @@ interface FormIngredient {
   unit: string;
 }
 
+interface FormStep {
+  id: number;
+  text: string;
+}
+
 export default function RecipeForm({
   editRecipe,
   onBack,
   onSuccess,
 }: RecipeFormProps) {
-  const { identity } = useInternetIdentity();
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
 
@@ -53,7 +56,7 @@ export default function RecipeForm({
   const [ingredients, setIngredients] = useState<FormIngredient[]>([
     { id: Date.now(), name: "", amount: "", unit: "" },
   ]);
-  const [steps, setSteps] = useState<Array<{ id: number; text: string }>>([
+  const [steps, setSteps] = useState<FormStep[]>([
     { id: Date.now(), text: "" },
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -104,7 +107,6 @@ export default function RecipeForm({
     e.preventDefault();
     if (!validate()) return;
 
-    const authorId = identity?.getPrincipal() ?? Principal.anonymous();
     const recipeData: Recipe = {
       id: editRecipe ? editRecipe.id : 0n,
       title: title.trim(),
@@ -124,7 +126,7 @@ export default function RecipeForm({
           }),
         ),
       steps: steps.filter((s) => s.text.trim()).map((s) => s.text),
-      authorId,
+      authorId: editRecipe ? editRecipe.authorId : Principal.anonymous(),
       createdAt: editRecipe ? editRecipe.createdAt : BigInt(Date.now()),
     };
 

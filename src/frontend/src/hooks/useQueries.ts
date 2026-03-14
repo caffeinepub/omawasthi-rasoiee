@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  Feedback,
   Ingredient,
+  JobApplication,
+  LocalUser,
   Recipe,
-  RegisteredUser,
-  UserProfile,
 } from "../backend.d";
 import { useActor } from "./useActor";
-import { useInternetIdentity } from "./useInternetIdentity";
 
 export function useListRecipes() {
   const { actor, isFetching } = useActor();
@@ -57,70 +57,103 @@ export function useListIngredients() {
   });
 }
 
-export function useGetFavorites() {
+export function useGetLocalUsers() {
   const { actor, isFetching } = useActor();
-  return useQuery<bigint[]>({
-    queryKey: ["favorites"],
+  return useQuery<LocalUser[]>({
+    queryKey: ["localUsers"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getFavorites();
+      return actor.getLocalUsers();
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-export function useIsAdmin() {
+export function useGetJobApplications() {
   const { actor, isFetching } = useActor();
-  return useQuery<boolean>({
-    queryKey: ["isAdmin"],
+  return useQuery<JobApplication[]>({
+    queryKey: ["jobApplications"],
     queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
+      if (!actor) return [];
+      return actor.getJobApplications();
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const query = useQuery<UserProfile | null>({
-    queryKey: ["currentUserProfile"],
+export function useGetFeedbackList() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Feedback[]>({
+    queryKey: ["feedbackList"],
     queryFn: async () => {
+      if (!actor) return [];
+      return actor.getFeedbackList();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSubmitJobApplication() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      email,
+      phone,
+      post,
+    }: {
+      name: string;
+      email: string;
+      phone: string;
+      post: string;
+    }) => {
       if (!actor) throw new Error("Actor not available");
-      return actor.getCallerUserProfile();
+      return actor.submitJobApplication(name, email, phone, post);
     },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
-}
-
-export function useIsUserRegistered() {
-  const { actor, isFetching } = useActor();
-  const { identity } = useInternetIdentity();
-  return useQuery<boolean>({
-    queryKey: ["isUserRegistered"],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isUserRegistered();
-    },
-    enabled: !!actor && !isFetching && !!identity,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["jobApplications"] }),
   });
 }
 
-export function useGetRegisteredUsers() {
-  const { actor, isFetching } = useActor();
-  return useQuery<RegisteredUser[]>({
-    queryKey: ["registeredUsers"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getRegisteredUsers();
+export function useSubmitFeedback() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      email,
+      phone,
+      message,
+    }: {
+      name: string;
+      email: string;
+      phone: string;
+      message: string;
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.submitFeedback(name, email, phone, message);
     },
-    enabled: !!actor && !isFetching,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["feedbackList"] }),
+  });
+}
+
+export function useRegisterLocalUser() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      email,
+      passwordHash,
+    }: {
+      name: string;
+      email: string;
+      passwordHash: string;
+    }) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.registerLocalUser(name, email, passwordHash);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["localUsers"] }),
   });
 }
 
@@ -160,30 +193,6 @@ export function useDeleteRecipe() {
   });
 }
 
-export function useAddFavorite() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (recipeId: bigint) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.addFavorite(recipeId);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["favorites"] }),
-  });
-}
-
-export function useRemoveFavorite() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (recipeId: bigint) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.removeFavorite(recipeId);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["favorites"] }),
-  });
-}
-
 export function useAddIngredient() {
   const { actor } = useActor();
   const qc = useQueryClient();
@@ -196,41 +205,6 @@ export function useAddIngredient() {
   });
 }
 
-export function useSaveUserProfile() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.saveCallerUserProfile(profile);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["currentUserProfile"] }),
-  });
-}
-
-export function useRegisterUser() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      naam,
-      email,
-      mobile,
-    }: {
-      naam: string;
-      email: string;
-      mobile: string;
-    }) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.registerUser(naam, email, mobile);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["isUserRegistered"] });
-      qc.invalidateQueries({ queryKey: ["registeredUsers"] });
-    },
-  });
-}
-
 export function useInitializeSeeds() {
   const { actor } = useActor();
   return useMutation({
@@ -238,5 +212,17 @@ export function useInitializeSeeds() {
       if (!actor) throw new Error("Actor not available");
       return actor.initializeSeeds();
     },
+  });
+}
+
+export function useDeleteIngredient() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      if (!actor) throw new Error("Not authenticated");
+      return actor.deleteIngredient(name);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ingredients"] }),
   });
 }
